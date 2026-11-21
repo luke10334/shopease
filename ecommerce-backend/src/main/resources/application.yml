@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: shopease-backend
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:shopease}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USER:shopease_user}
+    password: ${DB_PASS:shopease_pass}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        default_batch_fetch_size: 20
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 3000
+          max-attempts: 3
+          multiplier: 2.0
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:8F3A9D2C1E4B7F6A0D5C8E1A4B7F2D3C9E8A1D4B7F0C3E6A9D2C5E8B1F4A7D0C3}
+    expiration-ms: 86400000   # 24 hours
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+  info:
+    title: ShopEase API
+    version: 1.0.0
+    description: E-Commerce REST API
+
+logging:
+  level:
+    com.shopease: DEBUG
+    org.springframework.amqp: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

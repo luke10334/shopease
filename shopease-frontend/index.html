@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShopEase – Premium Shopping</title>
+  <meta name="description" content="ShopEase – Discover and shop premium products with fast delivery and secure payments." />
+
+  <!-- Preconnect Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- Design System -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Favicon emoji -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>" />
+</head>
+<body>
+
+  <!-- ── Navbar ──────────────────────────────────────────── -->
+  <nav id="navbar">
+    <div class="navbar-inner">
+      <a href="#/shop" class="navbar-brand">
+        <span class="logo-icon">🛒</span>
+        <span class="logo-text">Shop<span>Ease</span></span>
+      </a>
+
+      <div class="navbar-links">
+        <a href="#/shop"   class="nav-link" id="nav-shop">Shop</a>
+        <a href="#/orders" class="nav-link" id="nav-orders">My Orders</a>
+      </div>
+
+      <div class="navbar-spacer"></div>
+
+      <!-- Cart icon (hidden for admins) -->
+      <div class="navbar-cart-wrap" id="cart-icon-wrap">
+        <a href="#/cart" class="btn btn-ghost btn-sm" id="nav-cart-btn" title="Cart">
+          🛒
+          <span class="cart-badge-pill" id="cart-badge"></span>
+        </a>
+      </div>
+
+      <!-- Auth section injected by router -->
+      <div id="nav-auth"></div>
+    </div>
+  </nav>
+
+  <!-- ── SPA App Mount ────────────────────────────────────── -->
+  <main id="app">
+    <!-- Page content rendered here by JS router -->
+    <div class="loader-wrap">
+      <div class="loader-spinner"></div>
+      <p class="loader-text">Starting ShopEase…</p>
+    </div>
+  </main>
+
+  <!-- ── Scripts (order matters) ──────────────────────────── -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/shop.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/orders.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/router.js"></script>
+
+  <script>
+    // ── Bootstrap ──────────────────────────────────────────
+    Router.define({
+      '/shop':     () => renderShop(),
+      '/login':    () => renderLogin(),
+      '/register': () => renderRegister(),
+      '/product':  (id) => renderProductDetail(id),
+      '/cart':     () => renderCart(),
+      '/orders':   () => renderOrders(),
+      '/admin':    () => renderAdmin(),
+    });
+
+    // Hide/show cart icon based on role
+    function toggleCartIcon() {
+      const wrap = document.getElementById('cart-icon-wrap');
+      const ordersLink = document.getElementById('nav-orders');
+      if (!wrap) return;
+      const isAdmin = CurrentUser.isAdmin();
+      wrap.style.display = isAdmin ? 'none' : '';
+      ordersLink.style.display = isAdmin ? 'none' : '';
+    }
+
+    // Override updateNavbar to also toggle cart icon
+    const _origUpdateNavbar = updateNavbar;
+    window.updateNavbar = function() {
+      _origUpdateNavbar();
+      toggleCartIcon();
+    };
+
+    Router.init();
+  </script>
+
+</body>
+</html>

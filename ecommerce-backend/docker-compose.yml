@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: shopease-mysql
+    environment:
+      MYSQL_DATABASE:      shopease
+      MYSQL_USER:          shopease_user
+      MYSQL_PASSWORD:      shopease_pass
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "shopease_user", "-pshopease_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shopease-net
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: shopease-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"     # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shopease-net
+
+  app:
+    build: .
+    container_name: shopease-app
+    environment:
+      DB_HOST:          mysql
+      DB_PORT:          3306
+      DB_NAME:          shopease
+      DB_USER:          shopease_user
+      DB_PASS:          shopease_pass
+      RABBITMQ_HOST:    rabbitmq
+      RABBITMQ_PORT:    5672
+      RABBITMQ_USER:    guest
+      RABBITMQ_PASS:    guest
+      JWT_SECRET:       "8F3A9D2C1E4B7F6A0D5C8E1A4B7F2D3C9E8A1D4B7F0C3E6A9D2C5E8B1F4A7D0C3"
+      SPRING_PROFILES_ACTIVE: default
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - shopease-net
+    restart: on-failure
+
+volumes:
+  mysql_data:
+  rabbitmq_data:
+
+networks:
+  shopease-net:
+    driver: bridge
