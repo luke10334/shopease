@@ -1,197 +1,257 @@
-# ShopEase Backend 🛒
+# ShopEase Backend
 
-A production-style **Java 21 + Spring Boot 3** e-commerce REST API with JWT auth, role-based access control, async order processing via RabbitMQ, and a fully Dockerized setup.
+ShopEase is a Java-based e-commerce backend built using Spring Boot. It provides REST APIs for user authentication, product management, shopping carts, and order management.
 
----
+The application uses JWT for authentication, role-based access control for authorization, and RabbitMQ for asynchronous order processing. MySQL is used to store application data, and Docker Compose is used to run the application along with its dependencies.
 
-## Tech Stack
+## Technologies Used
 
-| Layer | Technology |
+| Component | Technology |
 |---|---|
 | Language | Java 21 |
-| Framework | Spring Boot 3.2 |
-| Security | Spring Security + JWT (JJWT 0.12) |
-| Persistence | Spring Data JPA / Hibernate + MySQL 8 |
-| Messaging | RabbitMQ 3.13 (async order processing) |
-| Build | Maven 3.9 |
-| Docs | Springdoc OpenAPI / Swagger UI |
-| Container | Docker + Docker Compose |
-
----
+| Backend Framework | Spring Boot 3.2 |
+| Security | Spring Security, JWT |
+| Database | MySQL 8 |
+| ORM | Spring Data JPA, Hibernate |
+| Message Broker | RabbitMQ 3.13 |
+| Build Tool | Maven |
+| API Documentation | Springdoc OpenAPI, Swagger UI |
+| Containerization | Docker, Docker Compose |
 
 ## Project Structure
 
-```
+```text
 shopease-backend/
-├── src/main/java/com/shopease/
-│   ├── ShopEaseApplication.java
-│   ├── config/
-│   │   ├── DataSeeder.java          # Seeds initial data on startup
-│   │   ├── OpenApiConfig.java
-│   │   ├── RabbitMQConfig.java      # Exchange, queues, DLQ setup
-│   │   └── SecurityConfig.java      # JWT filter chain + RBAC rules
-│   ├── controller/
-│   │   ├── AuthController.java
-│   │   ├── ProductController.java
-│   │   ├── CategoryController.java
-│   │   ├── CartController.java
-│   │   ├── OrderController.java
-│   │   ├── UserController.java
-│   │   └── AdminController.java
-│   ├── dto/
-│   │   ├── request/                 # Validated inbound DTOs
-│   │   └── response/                # Outbound response DTOs
-│   ├── entity/                      # JPA entities (User, Product, Cart, Order…)
-│   ├── exception/                   # Custom exceptions + GlobalExceptionHandler
-│   ├── messaging/
-│   │   ├── OrderPlacedEvent.java
-│   │   ├── OrderEventProducer.java
-│   │   └── OrderEventConsumer.java  # Confirms order + sends notification log
-│   ├── repository/                  # Spring Data JPA repositories
-│   ├── security/
-│   │   ├── JwtUtil.java             # Token generation & validation
-│   │   ├── JwtAuthFilter.java       # OncePerRequestFilter
-│   │   ├── UserPrincipal.java
-│   │   └── UserDetailsServiceImpl.java
-│   └── service/                     # Business logic layer
-├── src/main/resources/
-│   ├── application.yml
-│   └── application-test.yml
-├── src/test/java/com/shopease/
-│   └── AuthServiceTest.java
+├── src/
+│   ├── main/
+│   │   ├── java/com/shopease/
+│   │   │   ├── config/
+│   │   │   ├── controller/
+│   │   │   ├── dto/
+│   │   │   │   ├── request/
+│   │   │   │   └── response/
+│   │   │   ├── entity/
+│   │   │   ├── exception/
+│   │   │   ├── messaging/
+│   │   │   ├── repository/
+│   │   │   ├── security/
+│   │   │   └── service/
+│   │   └── resources/
+│   └── test/
 ├── scripts/
-│   └── schema.sql                   # MySQL DDL (used by Docker init)
-├── Dockerfile                       # Multi-stage build
-├── docker-compose.yml               # App + MySQL + RabbitMQ
+│   └── schema.sql
+├── Dockerfile
+├── docker-compose.yml
 ├── .env.example
 └── pom.xml
 ```
 
----
+## Features
 
-## Quick Start
+### 1. User Authentication and Authorization
+- User registration and login.
+- JWT-based authentication.
+- Separate USER and ADMIN roles.
+- Protected endpoints using Spring Security.
+- Role-based access using security configuration and `@PreAuthorize`.
 
-### Option A — Docker Compose (recommended)
+### 2. Product Management
+- View available products.
+- Search products.
+- Filter products by category.
+- Pagination for product listings.
+- Admin operations to add, update, and deactivate products.
+
+### 3. Shopping Cart
+- Add products to the cart.
+- Update item quantities.
+- Remove individual items.
+- View and clear the cart.
+
+### 4. Order Management
+- Place orders using cart items.
+- View order history.
+- Retrieve individual order details.
+- Admin access to all customer orders.
+- Update order status.
+
+### 5. Asynchronous Order Processing
+RabbitMQ is used to process order events asynchronously.
+
+The order is initially saved with a `PENDING` status. An event is then published to RabbitMQ, where a consumer handles order confirmation and notification logging.
+
+The messaging configuration also includes:
+- Direct exchange and queues.
+- Dead Letter Queue (DLQ).
+- Retry mechanism with exponential backoff.
+
+### 6. API Documentation
+Swagger UI is available for exploring and testing the REST endpoints.
+
+## Running the Project
+
+### Using Docker Compose
+
+Clone the repository:
 
 ```bash
-git clone <repo-url> && cd shopease-backend
-
-# Build and start all services
-docker compose up --build
-
-# App:         http://localhost:8080
-# Swagger UI:  http://localhost:8080/swagger-ui.html
-# RabbitMQ UI: http://localhost:15672  (guest / guest)
+git clone <your-repository-url>
+cd shopease-backend
 ```
 
-### Option B — Local development
+Build and start the application:
 
 ```bash
-# 1. Start MySQL and RabbitMQ (Docker)
-docker compose up mysql rabbitmq -d
+docker compose up --build
+```
 
-# 2. Apply schema
-mysql -u shopease_user -pshopease_pass shopease < scripts/schema.sql
+The following services will be available:
 
-# 3. Run the app
+| Service | URL |
+|---|---|
+| Backend API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| RabbitMQ Management | http://localhost:15672 |
+
+### Local Development
+
+Start MySQL and RabbitMQ:
+
+```bash
+docker compose up -d mysql rabbitmq
+```
+
+Apply the database schema if required:
+
+```bash
+mysql -u shopease_user -p shopease < scripts/schema.sql
+```
+
+Run the Spring Boot application:
+
+```bash
 ./mvnw spring-boot:run
 ```
 
----
+## API Endpoints
 
-## Seed Credentials
+### Authentication
 
-| Role  | Email                 | Password    |
-|-------|-----------------------|-------------|
-| ADMIN | admin@shopease.com    | Admin@123   |
-| USER  | john@example.com      | User@1234   |
-
----
-
-## API Reference
-
-### Auth
-
-| Method | Endpoint             | Access | Description |
-|--------|----------------------|--------|-------------|
-| POST   | /api/auth/register   | Public | Register new user |
-| POST   | /api/auth/login      | Public | Login, returns JWT |
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/auth/register` | Public |
+| POST | `/api/auth/login` | Public |
 
 ### Products
 
-| Method | Endpoint                | Access | Description |
-|--------|-------------------------|--------|-------------|
-| GET    | /api/products           | Public | List products (paginated, filterable by category) |
-| GET    | /api/products/search?q= | Public | Full-text search |
-| GET    | /api/products/{id}      | Public | Get product |
-| POST   | /api/products           | ADMIN  | Create product |
-| PUT    | /api/products/{id}      | ADMIN  | Update product |
-| DELETE | /api/products/{id}      | ADMIN  | Deactivate product |
+| Method | Endpoint | Access |
+|---|---|---|
+| GET | `/api/products` | Public |
+| GET | `/api/products/search?q=` | Public |
+| GET | `/api/products/{id}` | Public |
+| POST | `/api/products` | ADMIN |
+| PUT | `/api/products/{id}` | ADMIN |
+| DELETE | `/api/products/{id}` | ADMIN |
 
 ### Cart
 
-| Method | Endpoint                    | Access | Description |
-|--------|-----------------------------|--------|-------------|
-| GET    | /api/cart                   | USER   | View cart |
-| POST   | /api/cart/items             | USER   | Add item |
-| PATCH  | /api/cart/items/{id}?qty=N  | USER   | Update quantity |
-| DELETE | /api/cart/items/{id}        | USER   | Remove item |
-| DELETE | /api/cart                   | USER   | Clear cart |
+| Method | Endpoint | Access |
+|---|---|---|
+| GET | `/api/cart` | USER |
+| POST | `/api/cart/items` | USER |
+| PATCH | `/api/cart/items/{id}?qty=N` | USER |
+| DELETE | `/api/cart/items/{id}` | USER |
+| DELETE | `/api/cart` | USER |
 
 ### Orders
 
-| Method | Endpoint           | Access | Description |
-|--------|--------------------|--------|-------------|
-| POST   | /api/orders        | USER   | Place order from cart |
-| GET    | /api/orders        | USER   | Order history (paginated) |
-| GET    | /api/orders/{id}   | USER   | Get specific order |
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/orders` | USER |
+| GET | `/api/orders` | USER |
+| GET | `/api/orders/{id}` | USER |
 
 ### Admin
 
-| Method | Endpoint                          | Access | Description |
-|--------|-----------------------------------|--------|-------------|
-| GET    | /api/admin/orders                 | ADMIN  | All orders (filter by status) |
-| GET    | /api/admin/orders/{id}            | ADMIN  | Any order |
-| PATCH  | /api/admin/orders/{id}/status     | ADMIN  | Update order status |
-| GET    | /api/admin/users                  | ADMIN  | List all users |
+| Method | Endpoint | Access |
+|---|---|---|
+| GET | `/api/admin/orders` | ADMIN |
+| GET | `/api/admin/orders/{id}` | ADMIN |
+| PATCH | `/api/admin/orders/{id}/status` | ADMIN |
+| GET | `/api/admin/users` | ADMIN |
 
----
+## Order Processing Flow
 
-## RabbitMQ Flow
-
-```
-[OrderController] → placeOrder()
-        │
-        ▼
-[OrderService] saves Order(PENDING) → publishes OrderPlacedEvent
-        │
-        ▼  (async, via RabbitMQ direct exchange)
-[OrderEventConsumer] receives event
-        │
-        ├─ Updates Order status: PENDING → CONFIRMED
-        └─ Logs notification (plug in JavaMailSender here)
-
-Dead Letter Queue (DLQ): order.processing.dlq
-Retry: 3 attempts, 3s initial interval, 2x backoff
-```
-
----
-
-## Order Status Transitions
-
-```
-PENDING → CONFIRMED → PROCESSING → SHIPPED → DELIVERED
-   └──────────────────────────────► CANCELLED
+```text
+OrderController
+      |
+      v
+OrderService
+      |
+      v
+Save Order (PENDING)
+      |
+      v
+Publish OrderPlacedEvent
+      |
+      v
+RabbitMQ Exchange
+      |
+      v
+OrderEventConsumer
+      |
+      v
+Update Order Status
+      |
+      v
+CONFIRMED
 ```
 
----
+Failed messages can be routed to the Dead Letter Queue for further inspection.
 
-## Interview Talking Points
+## Order Status
 
-1. **Why monolith first?** Avoids distributed systems complexity before product-market fit. Easy to extract services later.
-2. **Why RabbitMQ only for orders?** Order confirmation is the only genuinely async operation — clearing cart, deducting stock are synchronous within the same transaction.
-3. **JWT over sessions?** Stateless, scales horizontally without shared session store.
-4. **Soft delete on products** (`active = false`) preserves order history integrity.
-5. **Price snapshot** (`price_at_purchase`) in `order_items` prevents order history corruption when prices change.
-6. **DLQ pattern** ensures failed order messages don't get lost.
-7. **`@PreAuthorize` + `SecurityConfig`** provide two layers of RBAC enforcement.
+```text
+PENDING
+   |
+   v
+CONFIRMED
+   |
+   v
+PROCESSING
+   |
+   v
+SHIPPED
+   |
+   v
+DELIVERED
+
+PENDING / CONFIRMED / PROCESSING
+   |
+   v
+CANCELLED
+```
+
+## Design Decisions
+
+- **JWT authentication:** Used to authenticate API requests without maintaining server-side sessions.
+- **Layered architecture:** Controllers handle HTTP requests, services contain business logic, and repositories handle database operations.
+- **RabbitMQ:** Used to handle order confirmation asynchronously.
+- **Soft deletion:** Products are deactivated instead of permanently deleted.
+- **Price snapshot:** The purchase price is stored with each order item so that historical orders retain their original prices.
+- **Global exception handling:** Centralized exception handling provides consistent API error responses.
+
+## Testing
+
+The project includes a test structure using Spring Boot's testing support.
+
+Additional integration tests can be added for authentication, product operations, cart management, and order processing.
+
+## Future Improvements
+
+- Payment gateway integration.
+- Email notifications.
+- Product image uploads.
+- Automated integration testing.
+- CI/CD pipeline.
+- Frontend integration.
